@@ -1,15 +1,10 @@
-
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Share2, Timer, Trophy } from "lucide-react";
-import { generateMaze, getMazeNumber, getTodaySeed, generateShareText } from "@/utils/mazeUtils";
+import { generateMaze, getMazeNumber, getTodaySeed, generateShareText } from "@/utils/maze";
 import { toast } from "sonner";
-
-interface Position {
-  x: number;
-  y: number;
-}
+import type { Position } from "@/utils/maze";
 
 const MAZE_SIZE = 15; // This creates a challenging but solvable maze
 
@@ -79,7 +74,6 @@ const Maze: React.FC = () => {
       setPlayerPos(newPos);
       setMoves(m => m + 1);
 
-      // Check win condition
       if (newPos.x === maze.endPosition.x && newPos.y === maze.endPosition.y) {
         handleWin();
       }
