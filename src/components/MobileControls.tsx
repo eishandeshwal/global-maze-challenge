@@ -12,7 +12,7 @@ const MobileControls: React.FC<MobileControlsProps> = ({ onMove }) => {
       <div className="grid grid-cols-3 gap-2">
         <div className="col-start-2">
           <button
-            className="bg-primary/80 hover:bg-primary text-primary-foreground p-4 rounded-md shadow-lg"
+            className="bg-primary hover:bg-primary/90 text-primary-foreground p-4 rounded-md shadow-lg"
             onClick={() => onMove('ArrowUp')}
             aria-label="Move up"
           >
@@ -21,7 +21,7 @@ const MobileControls: React.FC<MobileControlsProps> = ({ onMove }) => {
         </div>
         <div className="col-start-1 row-start-2">
           <button
-            className="bg-primary/80 hover:bg-primary text-primary-foreground p-4 rounded-md shadow-lg"
+            className="bg-primary hover:bg-primary/90 text-primary-foreground p-4 rounded-md shadow-lg"
             onClick={() => onMove('ArrowLeft')}
             aria-label="Move left"
           >
@@ -30,7 +30,7 @@ const MobileControls: React.FC<MobileControlsProps> = ({ onMove }) => {
         </div>
         <div className="col-start-2 row-start-2">
           <button
-            className="bg-primary/80 hover:bg-primary text-primary-foreground p-4 rounded-md shadow-lg"
+            className="bg-primary hover:bg-primary/90 text-primary-foreground p-4 rounded-md shadow-lg"
             onClick={() => onMove('ArrowDown')}
             aria-label="Move down"
           >
@@ -39,7 +39,7 @@ const MobileControls: React.FC<MobileControlsProps> = ({ onMove }) => {
         </div>
         <div className="col-start-3 row-start-2">
           <button
-            className="bg-primary/80 hover:bg-primary text-primary-foreground p-4 rounded-md shadow-lg"
+            className="bg-primary hover:bg-primary/90 text-primary-foreground p-4 rounded-md shadow-lg"
             onClick={() => onMove('ArrowRight')}
             aria-label="Move right"
           >

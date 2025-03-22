@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -142,19 +143,25 @@ const Maze: React.FC = () => {
   const getCellPosition = (x: number, y: number) => {
     const centerX = 50;
     const centerY = 50;
-    const maxRadius = 42;
+    const maxRadius = 42; // Controls how far cells go from center (percentage of container)
     
-    const normalizedX = x / (MAZE_SIZE - 1) * 2 - 1;
-    const normalizedY = y / (MAZE_SIZE - 1) * 2 - 1;
+    // Calculate normalized position from -1 to 1
+    const normalizedX = (x / (MAZE_SIZE - 1)) * 2 - 1;
+    const normalizedY = (y / (MAZE_SIZE - 1)) * 2 - 1;
     
+    // Calculate distance from center (0,0)
     const distanceFromCenter = Math.sqrt(normalizedX * normalizedX + normalizedY * normalizedY);
     
+    // Calculate the radius based on distance from center
+    // Math.sqrt(2) is the maximum possible distance in a normalized grid
     const radius = distanceFromCenter > 0 
       ? (distanceFromCenter / Math.sqrt(2)) * maxRadius 
       : 0;
     
+    // Calculate the angle
     let angle = Math.atan2(normalizedY, normalizedX);
     
+    // Convert to Cartesian coordinates
     const posX = centerX + radius * Math.cos(angle);
     const posY = centerY + radius * Math.sin(angle);
     
@@ -187,15 +194,13 @@ const Maze: React.FC = () => {
             {maze.grid.map((row, y) =>
               row.map((cell, x) => {
                 const { posX, posY } = getCellPosition(x, y);
+                const cellSize = Math.max(2, 85 / MAZE_SIZE);
+                
                 return (
                   <div
                     key={`${x}-${y}`}
                     className={`
                       maze-cell absolute
-                      ${cell.walls.top ? "wall-top" : ""}
-                      ${cell.walls.right ? "wall-right" : ""}
-                      ${cell.walls.bottom ? "wall-bottom" : ""}
-                      ${cell.walls.left ? "wall-left" : ""}
                       ${x === playerPos.x && y === playerPos.y ? "bg-maze-player" : ""}
                       ${x === maze.startPosition.x && y === maze.startPosition.y ? "bg-maze-start" : ""}
                       ${x === maze.endPosition.x && y === maze.endPosition.y ? "bg-maze-end" : ""}
@@ -207,8 +212,8 @@ const Maze: React.FC = () => {
                       left: `${posX}%`,
                       top: `${posY}%`,
                       transformOrigin: 'center',
-                      width: `${Math.max(2, 85 / MAZE_SIZE)}%`,
-                      height: `${Math.max(2, 85 / MAZE_SIZE)}%`,
+                      width: `${cellSize}%`,
+                      height: `${cellSize}%`,
                       transform: `translate(-50%, -50%)`,
                     }}
                   >
