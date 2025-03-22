@@ -1,12 +1,14 @@
+
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Share2, Timer, Trophy } from "lucide-react";
-import { generateMaze, getMazeNumber, getTodaySeed, generateShareText } from "@/utils/maze";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Share2, Timer, Trophy, ZoomIn, ZoomOut } from "lucide-react";
+import { generateMaze, getMazeNumber, getTodaySeed, generateShareText, solveMaze } from "@/utils/maze";
 import { toast } from "sonner";
 import type { Position } from "@/utils/maze";
 
 const MAZE_SIZE = 15; // This creates a challenging but solvable maze
+const ZOOM_VIEW_SIZE = 3; // Number of cells visible around the player (3 means 7x7 grid)
 
 const Maze: React.FC = () => {
   const [maze, setMaze] = useState(generateMaze(MAZE_SIZE, getTodaySeed()));
@@ -15,6 +17,10 @@ const Maze: React.FC = () => {
   const [completed, setCompleted] = useState(false);
   const [showStats, setShowStats] = useState(false);
   const [time, setTime] = useState(0);
+  const [zoomedView, setZoomedView] = useState(false);
+  const [revealedCells, setRevealedCells] = useState<boolean[][]>(() => 
+    Array(maze.grid.length).fill(null).map(() => Array(maze.grid[0].length).fill(false))
+  );
   const timeRef = useRef<NodeJS.Timeout>();
   const startTimeRef = useRef<number>();
   const gameStarted = useRef(false);
@@ -35,12 +41,32 @@ const Maze: React.FC = () => {
       timeRef.current = setInterval(() => {
         setTime(Math.floor((Date.now() - (startTimeRef.current || Date.now())) / 1000));
       }, 1000);
+      
+      // Switch to zoomed view after first move
+      setZoomedView(true);
     }
 
     return () => {
       if (timeRef.current) clearInterval(timeRef.current);
     };
   }, [moves]);
+
+  // Update revealed cells when player moves
+  useEffect(() => {
+    if (moves > 0) {
+      // Create new revealed cells array
+      const newRevealedCells = [...revealedCells];
+      
+      // Reveal cells around player position
+      for (let y = Math.max(0, playerPos.y - ZOOM_VIEW_SIZE); y <= Math.min(maze.grid.length - 1, playerPos.y + ZOOM_VIEW_SIZE); y++) {
+        for (let x = Math.max(0, playerPos.x - ZOOM_VIEW_SIZE); x <= Math.min(maze.grid[0].length - 1, playerPos.x + ZOOM_VIEW_SIZE); x++) {
+          newRevealedCells[y][x] = true;
+        }
+      }
+      
+      setRevealedCells(newRevealedCells);
+    }
+  }, [playerPos, moves]);
 
   const handleMove = useCallback((direction: string) => {
     const currentCell = maze.grid[playerPos.y][playerPos.x];
@@ -84,6 +110,7 @@ const Maze: React.FC = () => {
     if (timeRef.current) clearInterval(timeRef.current);
     setCompleted(true);
     setShowStats(true);
+    setZoomedView(false); // Show the full maze again after winning
     toast("Congratulations! You've completed today's maze! 🎉");
   }, []);
 
@@ -96,6 +123,25 @@ const Maze: React.FC = () => {
     } catch (err) {
       toast("Couldn't copy to clipboard. Please try again.");
     }
+  };
+
+  const toggleZoomView = () => {
+    setZoomedView(!zoomedView);
+  };
+
+  // Determine which cells are visible to the player
+  const isCellVisible = (x: number, y: number) => {
+    if (!zoomedView) return true; // Full maze view
+    if (completed) return true; // Show all after completion
+    
+    // Always show start and end positions
+    if ((x === maze.startPosition.x && y === maze.startPosition.y) || 
+        (x === maze.endPosition.x && y === maze.endPosition.y)) {
+      return true;
+    }
+    
+    // Show cells that have been revealed
+    return revealedCells[y][x];
   };
 
   return (
@@ -112,6 +158,11 @@ const Maze: React.FC = () => {
             <span className="font-mono">{Math.floor(time / 60)}:{(time % 60).toString().padStart(2, "0")}</span>
           </div>
           <div>Moves: {moves}</div>
+          {moves > 0 && !completed && (
+            <Button variant="ghost" size="sm" onClick={toggleZoomView}>
+              {zoomedView ? <ZoomOut className="w-4 h-4" /> : <ZoomIn className="w-4 h-4" />}
+            </Button>
+          )}
         </div>
 
         <div className="maze-container">
@@ -132,6 +183,9 @@ const Maze: React.FC = () => {
                     ${x === playerPos.x && y === playerPos.y ? "bg-maze-player" : ""}
                     ${x === maze.startPosition.x && y === maze.startPosition.y ? "bg-maze-start" : ""}
                     ${x === maze.endPosition.x && y === maze.endPosition.y ? "bg-maze-end" : ""}
+                    ${!isCellVisible(x, y) ? "opacity-0" : ""}
+                    ${zoomedView && Math.abs(x - playerPos.x) <= 1 && Math.abs(y - playerPos.y) <= 1 ? "scale-[1.15]" : ""}
+                    ${zoomedView ? "transition-all duration-300" : ""}
                   `}
                 />
               ))
@@ -148,6 +202,9 @@ const Maze: React.FC = () => {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>DailyMaze #{getMazeNumber()} Completed!</DialogTitle>
+            <DialogDescription>
+              You successfully navigated through the maze
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4 py-4">
