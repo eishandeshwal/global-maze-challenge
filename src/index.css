@@ -138,6 +138,7 @@
   touch-action: none;
 }
 
+/* Updated styles for circular maze */
 .maze-grid {
   display: grid;
   grid-template-columns: repeat(var(--maze-size), 1fr);
@@ -149,6 +150,23 @@
   overflow: hidden;
   border-radius: 12px;
   position: relative;
+}
+
+.circular-maze {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  max-width: min(100vw - 2rem, 600px);
+  border: 2px solid black;
+  border-radius: 50%;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  background-color: white;
+  overflow: hidden;
+}
+
+.wall {
+  position: absolute;
+  background-color: #000;
 }
 
 .result-animation {

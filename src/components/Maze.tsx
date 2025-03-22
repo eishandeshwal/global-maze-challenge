@@ -144,6 +144,34 @@ const Maze: React.FC = () => {
     return revealedCells[y][x];
   };
 
+  // Calculate cell position for circular maze
+  const getCellPosition = (x: number, y: number) => {
+    const centerX = 50;
+    const centerY = 50;
+    const maxRadius = 42;
+    
+    // Convert grid coordinates to polar coordinates
+    const normalizedX = x / (MAZE_SIZE - 1) * 2 - 1; // -1 to 1
+    const normalizedY = y / (MAZE_SIZE - 1) * 2 - 1; // -1 to 1
+    
+    // Calculate distance from center (0 to 1)
+    const distanceFromCenter = Math.sqrt(normalizedX * normalizedX + normalizedY * normalizedY);
+    
+    // Scale to fit within the circle
+    const radius = distanceFromCenter > 0 
+      ? (distanceFromCenter / Math.sqrt(2)) * maxRadius 
+      : 0;
+    
+    // Calculate angle (in radians)
+    let angle = Math.atan2(normalizedY, normalizedX);
+    
+    // Convert to percentage coordinates
+    const posX = centerX + radius * Math.cos(angle);
+    const posY = centerY + radius * Math.sin(angle);
+    
+    return { posX, posY };
+  };
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4 gap-6 animate-fade-in">
       <div className="text-center space-y-2">
@@ -166,29 +194,51 @@ const Maze: React.FC = () => {
         </div>
 
         <div className="maze-container">
-          <div
-            className="maze-grid"
-            style={{ "--maze-size": MAZE_SIZE } as React.CSSProperties}
-          >
+          <div className="circular-maze">
             {maze.grid.map((row, y) =>
-              row.map((cell, x) => (
-                <div
-                  key={`${x}-${y}`}
-                  className={`
-                    maze-cell relative
-                    ${cell.walls.top ? "border-t-2 border-black" : ""}
-                    ${cell.walls.right ? "border-r-2 border-black" : ""}
-                    ${cell.walls.bottom ? "border-b-2 border-black" : ""}
-                    ${cell.walls.left ? "border-l-2 border-black" : ""}
-                    ${x === playerPos.x && y === playerPos.y ? "bg-maze-player" : ""}
-                    ${x === maze.startPosition.x && y === maze.startPosition.y ? "bg-maze-start" : ""}
-                    ${x === maze.endPosition.x && y === maze.endPosition.y ? "bg-maze-end" : ""}
-                    ${!isCellVisible(x, y) ? "opacity-0" : ""}
-                    ${zoomedView && Math.abs(x - playerPos.x) <= 1 && Math.abs(y - playerPos.y) <= 1 ? "scale-[1.15]" : ""}
-                    ${zoomedView ? "transition-all duration-300" : ""}
-                  `}
-                />
-              ))
+              row.map((cell, x) => {
+                const { posX, posY } = getCellPosition(x, y);
+                return (
+                  <div
+                    key={`${x}-${y}`}
+                    className={`
+                      maze-cell absolute
+                      ${cell.walls.top ? "wall-top" : ""}
+                      ${cell.walls.right ? "wall-right" : ""}
+                      ${cell.walls.bottom ? "wall-bottom" : ""}
+                      ${cell.walls.left ? "wall-left" : ""}
+                      ${x === playerPos.x && y === playerPos.y ? "bg-maze-player" : ""}
+                      ${x === maze.startPosition.x && y === maze.startPosition.y ? "bg-maze-start" : ""}
+                      ${x === maze.endPosition.x && y === maze.endPosition.y ? "bg-maze-end" : ""}
+                      ${!isCellVisible(x, y) ? "opacity-0" : ""}
+                      ${zoomedView && Math.abs(x - playerPos.x) <= 1 && Math.abs(y - playerPos.y) <= 1 ? "scale-[1.15]" : ""}
+                      ${zoomedView ? "transition-all duration-300" : ""}
+                    `}
+                    style={{
+                      left: `${posX}%`,
+                      top: `${posY}%`,
+                      transformOrigin: 'center',
+                      width: `${Math.max(2, 85 / MAZE_SIZE)}%`,
+                      height: `${Math.max(2, 85 / MAZE_SIZE)}%`,
+                      transform: `translate(-50%, -50%)`,
+                    }}
+                  >
+                    {/* Wall elements */}
+                    {cell.walls.top && (
+                      <div className="wall wall-top absolute top-0 left-0 right-0 h-0.5 bg-black" />
+                    )}
+                    {cell.walls.right && (
+                      <div className="wall wall-right absolute top-0 bottom-0 right-0 w-0.5 bg-black" />
+                    )}
+                    {cell.walls.bottom && (
+                      <div className="wall wall-bottom absolute bottom-0 left-0 right-0 h-0.5 bg-black" />
+                    )}
+                    {cell.walls.left && (
+                      <div className="wall wall-left absolute top-0 bottom-0 left-0 w-0.5 bg-black" />
+                    )}
+                  </div>
+                );
+              })
             )}
           </div>
         </div>
