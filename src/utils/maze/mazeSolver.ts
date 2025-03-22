@@ -1,5 +1,5 @@
 
-import { MazeData, Cell } from "./mazeTypes";
+import { MazeData, Cell, Position } from "./mazeTypes";
 
 export const solveMaze = (mazeData: MazeData): { path: [number, number][]; visited: [number, number][] } => {
   const { grid, startPosition, endPosition } = mazeData;
@@ -66,7 +66,7 @@ const findPath = (
   ];
 
   for (const dir of directions) {
-    const wallProperty = dir.wall as keyof typeof grid[y][x].walls;
+    const wallProperty = dir.wall as keyof Cell["walls"];
     if (!grid[y][x].walls[wallProperty]) {
       if (findPath(
         x + dir.x,
