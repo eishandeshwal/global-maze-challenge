@@ -1,9 +1,10 @@
-
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Share2, Timer, Trophy, ZoomIn, ZoomOut } from "lucide-react";
 import { generateMaze, getMazeNumber, getTodaySeed, generateShareText, solveMaze } from "@/utils/maze";
+import MobileControls from "@/components/MobileControls";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { toast } from "sonner";
 import type { Position } from "@/utils/maze";
 
@@ -24,6 +25,7 @@ const Maze: React.FC = () => {
   const timeRef = useRef<NodeJS.Timeout>();
   const startTimeRef = useRef<number>();
   const gameStarted = useRef(false);
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -42,7 +44,6 @@ const Maze: React.FC = () => {
         setTime(Math.floor((Date.now() - (startTimeRef.current || Date.now())) / 1000));
       }, 1000);
       
-      // Switch to zoomed view after first move
       setZoomedView(true);
     }
 
@@ -51,13 +52,10 @@ const Maze: React.FC = () => {
     };
   }, [moves]);
 
-  // Update revealed cells when player moves
   useEffect(() => {
     if (moves > 0) {
-      // Create new revealed cells array
       const newRevealedCells = [...revealedCells];
       
-      // Reveal cells around player position
       for (let y = Math.max(0, playerPos.y - ZOOM_VIEW_SIZE); y <= Math.min(maze.grid.length - 1, playerPos.y + ZOOM_VIEW_SIZE); y++) {
         for (let x = Math.max(0, playerPos.x - ZOOM_VIEW_SIZE); x <= Math.min(maze.grid[0].length - 1, playerPos.x + ZOOM_VIEW_SIZE); x++) {
           newRevealedCells[y][x] = true;
@@ -110,7 +108,7 @@ const Maze: React.FC = () => {
     if (timeRef.current) clearInterval(timeRef.current);
     setCompleted(true);
     setShowStats(true);
-    setZoomedView(false); // Show the full maze again after winning
+    setZoomedView(false);
     toast("Congratulations! You've completed today's maze! 🎉");
   }, []);
 
@@ -129,43 +127,34 @@ const Maze: React.FC = () => {
     setZoomedView(!zoomedView);
   };
 
-  // Determine which cells are visible to the player
   const isCellVisible = (x: number, y: number) => {
-    if (!zoomedView) return true; // Full maze view
-    if (completed) return true; // Show all after completion
+    if (!zoomedView) return true;
+    if (completed) return true;
     
-    // Always show start and end positions
     if ((x === maze.startPosition.x && y === maze.startPosition.y) || 
         (x === maze.endPosition.x && y === maze.endPosition.y)) {
       return true;
     }
     
-    // Show cells that have been revealed
     return revealedCells[y][x];
   };
 
-  // Calculate cell position for circular maze
   const getCellPosition = (x: number, y: number) => {
     const centerX = 50;
     const centerY = 50;
     const maxRadius = 42;
     
-    // Convert grid coordinates to polar coordinates
-    const normalizedX = x / (MAZE_SIZE - 1) * 2 - 1; // -1 to 1
-    const normalizedY = y / (MAZE_SIZE - 1) * 2 - 1; // -1 to 1
+    const normalizedX = x / (MAZE_SIZE - 1) * 2 - 1;
+    const normalizedY = y / (MAZE_SIZE - 1) * 2 - 1;
     
-    // Calculate distance from center (0 to 1)
     const distanceFromCenter = Math.sqrt(normalizedX * normalizedX + normalizedY * normalizedY);
     
-    // Scale to fit within the circle
     const radius = distanceFromCenter > 0 
       ? (distanceFromCenter / Math.sqrt(2)) * maxRadius 
       : 0;
     
-    // Calculate angle (in radians)
     let angle = Math.atan2(normalizedY, normalizedX);
     
-    // Convert to percentage coordinates
     const posX = centerX + radius * Math.cos(angle);
     const posY = centerY + radius * Math.sin(angle);
     
@@ -223,7 +212,6 @@ const Maze: React.FC = () => {
                       transform: `translate(-50%, -50%)`,
                     }}
                   >
-                    {/* Wall elements */}
                     {cell.walls.top && (
                       <div className="wall wall-top absolute top-0 left-0 right-0 h-0.5 bg-black" />
                     )}
@@ -244,9 +232,11 @@ const Maze: React.FC = () => {
         </div>
 
         <div className="text-center text-sm text-muted-foreground">
-          Use arrow keys or WASD to move
+          {isMobile ? "Use the controls below to move" : "Use arrow keys or WASD to move"}
         </div>
       </div>
+
+      {isMobile && !completed && <MobileControls onMove={handleMove} />}
 
       <Dialog open={showStats} onOpenChange={setShowStats}>
         <DialogContent className="sm:max-w-md">
