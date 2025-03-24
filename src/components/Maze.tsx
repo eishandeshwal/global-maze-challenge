@@ -1,7 +1,8 @@
+
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Share2, Timer, Trophy, ZoomIn, ZoomOut } from "lucide-react";
+import { Share2, Timer, Trophy, ZoomIn, ZoomOut, Bomb, Star } from "lucide-react";
 import { generateMaze, getMazeNumber, getTodaySeed, generateShareText, solveMaze } from "@/utils/maze";
 import MobileControls from "@/components/MobileControls";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -15,6 +16,8 @@ const Maze: React.FC = () => {
   const [maze, setMaze] = useState(generateMaze(MAZE_SIZE, getTodaySeed()));
   const [playerPos, setPlayerPos] = useState<Position>(maze.startPosition);
   const [moves, setMoves] = useState(0);
+  const [penalties, setPenalties] = useState(0);
+  const [bonuses, setBonuses] = useState(0);
   const [completed, setCompleted] = useState(false);
   const [showStats, setShowStats] = useState(false);
   const [time, setTime] = useState(0);
@@ -22,6 +25,7 @@ const Maze: React.FC = () => {
   const [revealedCells, setRevealedCells] = useState<boolean[][]>(() => 
     Array(maze.grid.length).fill(null).map(() => Array(maze.grid[0].length).fill(false))
   );
+  const [triggeredEvents, setTriggeredEvents] = useState<{[key: string]: boolean}>({});
   const timeRef = useRef<NodeJS.Timeout>();
   const startTimeRef = useRef<number>();
   const gameStarted = useRef(false);
@@ -98,11 +102,34 @@ const Maze: React.FC = () => {
       setPlayerPos(newPos);
       setMoves(m => m + 1);
 
+      // Check if player stepped on a mine
+      const newCell = maze.grid[newPos.y][newPos.x];
+      const cellKey = `${newPos.x},${newPos.y}`;
+      
+      if (newCell.hasMine && !triggeredEvents[cellKey]) {
+        setPenalties(p => p + 5);
+        setTriggeredEvents(prev => ({...prev, [cellKey]: true}));
+        toast("You hit a mine! +5 penalty", { 
+          icon: <Bomb className="w-4 h-4" />,
+          style: { backgroundColor: '#f87171' } 
+        });
+      }
+      
+      // Check if player picked up a powerup
+      if (newCell.hasPowerup && !triggeredEvents[cellKey]) {
+        setBonuses(b => b + 5);
+        setTriggeredEvents(prev => ({...prev, [cellKey]: true}));
+        toast("Powerup collected! -5 moves", { 
+          icon: <Star className="w-4 h-4" />,
+          style: { backgroundColor: '#60a5fa' } 
+        });
+      }
+
       if (newPos.x === maze.endPosition.x && newPos.y === maze.endPosition.y) {
         handleWin();
       }
     }
-  }, [playerPos, maze]);
+  }, [playerPos, maze, triggeredEvents]);
 
   const handleWin = useCallback(() => {
     if (timeRef.current) clearInterval(timeRef.current);
@@ -113,7 +140,7 @@ const Maze: React.FC = () => {
   }, []);
 
   const handleShare = async () => {
-    const shareText = generateShareText(moves, time, getMazeNumber());
+    const shareText = generateShareText(moves, time, getMazeNumber(), penalties, bonuses);
     
     try {
       await navigator.clipboard.writeText(shareText);
@@ -161,6 +188,8 @@ const Maze: React.FC = () => {
     return { posX, posY };
   };
 
+  const totalScore = moves + penalties - bonuses;
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4 gap-6 animate-fade-in">
       <div className="text-center space-y-2">
@@ -172,9 +201,14 @@ const Maze: React.FC = () => {
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-2">
             <Timer className="w-4 h-4" />
-            <span className="font-mono">{Math.floor(time / 60)}:{(time % 60).toString().padStart(2, "0")}</span>
+            <span className="font-mono">{time} seconds</span>
           </div>
-          <div>Moves: {moves}</div>
+          <div>
+            <div>Moves: {moves}</div>
+            {penalties > 0 && <div>Penalties: +{penalties}</div>}
+            {bonuses > 0 && <div>Bonuses: -{bonuses}</div>}
+            {(penalties > 0 || bonuses > 0) && <div>Total: {totalScore}</div>}
+          </div>
           {moves > 0 && !completed && (
             <Button variant="ghost" size="sm" onClick={toggleZoomView}>
               {zoomedView ? <ZoomOut className="w-4 h-4" /> : <ZoomIn className="w-4 h-4" />}
@@ -210,6 +244,11 @@ const Maze: React.FC = () => {
                       width: `${Math.max(2, 85 / MAZE_SIZE)}%`,
                       height: `${Math.max(2, 85 / MAZE_SIZE)}%`,
                       transform: `translate(-50%, -50%)`,
+                      backgroundColor: cell.hasMine && (completed || triggeredEvents[`${x},${y}`]) 
+                        ? 'rgba(239, 68, 68, 0.5)' 
+                        : cell.hasPowerup && (completed || triggeredEvents[`${x},${y}`])
+                        ? 'rgba(59, 130, 246, 0.5)'
+                        : '',
                     }}
                   >
                     {cell.walls.top && (
@@ -223,6 +262,12 @@ const Maze: React.FC = () => {
                     )}
                     {cell.walls.left && (
                       <div className="wall wall-left absolute top-0 bottom-0 left-0 w-0.5 bg-black" />
+                    )}
+                    {cell.hasMine && (completed || triggeredEvents[`${x},${y}`]) && (
+                      <Bomb className="w-full h-full p-1 text-red-500" />
+                    )}
+                    {cell.hasPowerup && (completed || triggeredEvents[`${x},${y}`]) && (
+                      <Star className="w-full h-full p-1 text-blue-500" />
                     )}
                   </div>
                 );
@@ -247,13 +292,25 @@ const Maze: React.FC = () => {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4 py-4">
+            <div className="grid grid-cols-3 gap-4 py-4">
               <div className="text-center">
                 <div className="text-2xl font-bold">{moves}</div>
                 <div className="text-sm text-muted-foreground">Moves</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold">{Math.floor(time / 60)}:{(time % 60).toString().padStart(2, "0")}</div>
+                <div className="text-2xl font-bold">{penalties}</div>
+                <div className="text-sm text-muted-foreground">Mine Penalties</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold">{bonuses}</div>
+                <div className="text-sm text-muted-foreground">Powerup Bonuses</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold">{totalScore}</div>
+                <div className="text-sm text-muted-foreground">Total Score</div>
+              </div>
+              <div className="text-center col-span-2">
+                <div className="text-2xl font-bold">{time} seconds</div>
                 <div className="text-sm text-muted-foreground">Time</div>
               </div>
             </div>

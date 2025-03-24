@@ -4,6 +4,8 @@ export interface Cell {
   y: number;
   visited: boolean;
   walls: { top: boolean; right: boolean; bottom: boolean; left: boolean };
+  hasMine?: boolean;
+  hasPowerup?: boolean;
 }
 
 export interface MazeData {

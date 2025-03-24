@@ -72,6 +72,8 @@ export const generateMaze = (size: number, seed?: number): MazeData => {
         y,
         visited: false,
         walls: { top: true, right: true, bottom: true, left: true },
+        hasMine: false,
+        hasPowerup: false,
       });
     }
     grid.push(row);
@@ -121,6 +123,39 @@ export const generateMaze = (size: number, seed?: number): MazeData => {
   // Make sure start and end have an opening
   grid[startPosition.y][startPosition.x].walls.top = false;
   grid[endPosition.y][endPosition.x].walls.bottom = false;
+
+  // Add mines and powerups (but not at start or end)
+  const numberOfMines = Math.floor(size * size * 0.05); // 5% of cells have mines
+  const numberOfPowerups = Math.floor(size * size * 0.03); // 3% of cells have powerups
+  
+  let minesAdded = 0;
+  let powerupsAdded = 0;
+  
+  while (minesAdded < numberOfMines) {
+    const x = Math.floor(random() * size);
+    const y = Math.floor(random() * size);
+    
+    // Don't place mines at start, end, or where there's already a mine or powerup
+    if ((x !== startPosition.x || y !== startPosition.y) && 
+        (x !== endPosition.x || y !== endPosition.y) &&
+        !grid[y][x].hasMine && !grid[y][x].hasPowerup) {
+      grid[y][x].hasMine = true;
+      minesAdded++;
+    }
+  }
+  
+  while (powerupsAdded < numberOfPowerups) {
+    const x = Math.floor(random() * size);
+    const y = Math.floor(random() * size);
+    
+    // Don't place powerups at start, end, or where there's already a mine or powerup
+    if ((x !== startPosition.x || y !== startPosition.y) && 
+        (x !== endPosition.x || y !== endPosition.y) &&
+        !grid[y][x].hasMine && !grid[y][x].hasPowerup) {
+      grid[y][x].hasPowerup = true;
+      powerupsAdded++;
+    }
+  }
 
   return {
     grid,

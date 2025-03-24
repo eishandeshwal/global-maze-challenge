@@ -1,4 +1,3 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -144,7 +143,7 @@
   grid-template-columns: repeat(var(--maze-size), 1fr);
   grid-template-rows: repeat(var(--maze-size), 1fr);
   aspect-ratio: 1 / 1;
-  max-width: min(100vw - 2rem, 780px); /* Increased by 30% from 600px */
+  max-width: min(100vw - 2rem, 858px); /* Increased by 10% from 780px */
   width: 100%;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
   overflow: hidden;
@@ -156,12 +155,11 @@
   position: relative;
   width: 100%;
   aspect-ratio: 1 / 1;
-  max-width: min(100vw - 2rem, 780px); /* Increased by 30% from 600px */
+  max-width: min(100vw - 2rem, 858px); /* Increased by 10% from 780px */
   border-radius: 50%;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
   background-color: white;
   overflow: hidden;
-  /* Removed border: 2px solid black; */
 }
 
 .wall {
