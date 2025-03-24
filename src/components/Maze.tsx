@@ -1,8 +1,7 @@
-
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Share2, Timer, Trophy, ZoomIn, ZoomOut, Cube, Square } from "lucide-react";
+import { Share2, Timer, Trophy, ZoomIn, ZoomOut, Box, Square } from "lucide-react";
 import { generateMaze, getMazeNumber, getTodaySeed, generateShareText, solveMaze } from "@/utils/maze";
 import MobileControls from "@/components/MobileControls";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -213,7 +212,7 @@ const Maze: React.FC = () => {
             )}
             {moves > 0 && !completed && (
               <Button variant="ghost" size="sm" onClick={toggle3DView} title="Toggle 3D view">
-                {is3D ? <Square className="w-4 h-4" /> : <Cube className="w-4 h-4" />}
+                {is3D ? <Square className="w-4 h-4" /> : <Box className="w-4 h-4" />}
               </Button>
             )}
           </div>
