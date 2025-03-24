@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Share2, Timer, Trophy, ZoomIn, ZoomOut, Box, Square } from "lucide-react";
+import { Share2, Timer, Trophy, ZoomIn, ZoomOut } from "lucide-react";
 import { generateMaze, getMazeNumber, getTodaySeed, generateShareText, solveMaze } from "@/utils/maze";
 import MobileControls from "@/components/MobileControls";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -9,7 +9,6 @@ import { toast } from "sonner";
 import type { Position } from "@/utils/maze";
 
 const MAZE_SIZE = 15; // This creates a challenging but solvable maze
-const MAZE_RINGS = 6; // Number of rings in the circular maze
 const ZOOM_VIEW_SIZE = 3; // Number of cells visible around the player (3 means 7x7 grid)
 
 const Maze: React.FC = () => {
@@ -20,7 +19,6 @@ const Maze: React.FC = () => {
   const [showStats, setShowStats] = useState(false);
   const [time, setTime] = useState(0);
   const [zoomedView, setZoomedView] = useState(false);
-  const [is3D, setIs3D] = useState(false);
   const [revealedCells, setRevealedCells] = useState<boolean[][]>(() => 
     Array(maze.grid.length).fill(null).map(() => Array(maze.grid[0].length).fill(false))
   );
@@ -28,7 +26,6 @@ const Maze: React.FC = () => {
   const startTimeRef = useRef<number>();
   const gameStarted = useRef(false);
   const isMobile = useIsMobile();
-  const mazeRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -47,8 +44,7 @@ const Maze: React.FC = () => {
         setTime(Math.floor((Date.now() - (startTimeRef.current || Date.now())) / 1000));
       }, 1000);
       
-      // Activate 3D mode after first move
-      setIs3D(true);
+      setZoomedView(true);
     }
 
     return () => {
@@ -113,7 +109,6 @@ const Maze: React.FC = () => {
     setCompleted(true);
     setShowStats(true);
     setZoomedView(false);
-    setIs3D(false);
     toast("Congratulations! You've completed today's maze! 🎉");
   }, []);
 
@@ -132,10 +127,6 @@ const Maze: React.FC = () => {
     setZoomedView(!zoomedView);
   };
 
-  const toggle3DView = () => {
-    setIs3D(!is3D);
-  };
-
   const isCellVisible = (x: number, y: number) => {
     if (!zoomedView) return true;
     if (completed) return true;
@@ -148,46 +139,26 @@ const Maze: React.FC = () => {
     return revealedCells[y][x];
   };
 
-  const getCircularPosition = (x: number, y: number) => {
-    // Calculate the distance from the center of the grid
-    const centerX = (MAZE_SIZE - 1) / 2;
-    const centerY = (MAZE_SIZE - 1) / 2;
-
-    // Calculate the normalized position (-1 to 1)
-    const normalizedX = (x - centerX) / centerX;
-    const normalizedY = (y - centerY) / centerY;
-
-    // Calculate polar coordinates (radius and angle)
+  const getCellPosition = (x: number, y: number) => {
+    const centerX = 50;
+    const centerY = 50;
+    const maxRadius = 42;
+    
+    const normalizedX = x / (MAZE_SIZE - 1) * 2 - 1;
+    const normalizedY = y / (MAZE_SIZE - 1) * 2 - 1;
+    
     const distanceFromCenter = Math.sqrt(normalizedX * normalizedX + normalizedY * normalizedY);
-    const maxDistance = Math.sqrt(2); // Maximum possible distance in a normalized grid
-
-    // Calculate the ring (0 = center, 1 = outer)
-    const ringIndex = Math.min(MAZE_RINGS - 1, Math.floor(distanceFromCenter * MAZE_RINGS / maxDistance));
     
-    // Calculate ring radius (inner radius = 10%, each ring takes up equal space to the outer edge)
-    const innerRadius = 10;
-    const outerRadius = 45;
-    const ringWidth = (outerRadius - innerRadius) / MAZE_RINGS;
+    const radius = distanceFromCenter > 0 
+      ? (distanceFromCenter / Math.sqrt(2)) * maxRadius 
+      : 0;
     
-    // Get the radius for this ring
-    const radius = innerRadius + ringWidth * (ringIndex + 0.5);
+    let angle = Math.atan2(normalizedY, normalizedX);
     
-    // Calculate angle (in radians)
-    const angle = Math.atan2(normalizedY, normalizedX);
+    const posX = centerX + radius * Math.cos(angle);
+    const posY = centerY + radius * Math.sin(angle);
     
-    // Convert back to cartesian coordinates (centered in the container)
-    const containerCenterX = 50;
-    const containerCenterY = 50;
-    const posX = containerCenterX + radius * Math.cos(angle);
-    const posY = containerCenterY + radius * Math.sin(angle);
-    
-    // Calculate the cell size based on the ring (outer rings have more cells, so should be smaller)
-    // The outer ring cells should be about 40% the size of the inner ring cells
-    const baseCellSize = 4;
-    const cellScaleFactor = 1 - (ringIndex * 0.1);
-    const cellSize = baseCellSize * cellScaleFactor;
-    
-    return { posX, posY, cellSize, ringIndex, angle };
+    return { posX, posY };
   };
 
   return (
@@ -204,100 +175,54 @@ const Maze: React.FC = () => {
             <span className="font-mono">{Math.floor(time / 60)}:{(time % 60).toString().padStart(2, "0")}</span>
           </div>
           <div>Moves: {moves}</div>
-          <div className="flex gap-2">
-            {moves > 0 && !completed && (
-              <Button variant="ghost" size="sm" onClick={toggleZoomView} title="Toggle zoom">
-                {zoomedView ? <ZoomOut className="w-4 h-4" /> : <ZoomIn className="w-4 h-4" />}
-              </Button>
-            )}
-            {moves > 0 && !completed && (
-              <Button variant="ghost" size="sm" onClick={toggle3DView} title="Toggle 3D view">
-                {is3D ? <Square className="w-4 h-4" /> : <Box className="w-4 h-4" />}
-              </Button>
-            )}
-          </div>
+          {moves > 0 && !completed && (
+            <Button variant="ghost" size="sm" onClick={toggleZoomView}>
+              {zoomedView ? <ZoomOut className="w-4 h-4" /> : <ZoomIn className="w-4 h-4" />}
+            </Button>
+          )}
         </div>
 
-        <div 
-          className="maze-container"
-          ref={mazeRef}
-        >
-          <div 
-            className={`circular-maze ${is3D ? 'maze-3d' : ''}`}
-            style={{
-              perspective: '1000px',
-              transformStyle: 'preserve-3d',
-            }}
-          >
+        <div className="maze-container">
+          <div className="circular-maze">
             {maze.grid.map((row, y) =>
               row.map((cell, x) => {
-                const { posX, posY, cellSize, ringIndex, angle } = getCircularPosition(x, y);
-                
-                // 3D transformation values
-                const depth = is3D ? ringIndex * 10 : 0;
-                const perspective = is3D ? 30 - (ringIndex * 5) : 0;
-                const rotateX = is3D ? 60 : 0;
-                
-                // Skip rendering cells that are too close to the center (creates the center hole)
-                if (ringIndex === 0 && distanceFromCenter(x, y) < 0.15) {
-                  return null;
-                }
-                
+                const { posX, posY } = getCellPosition(x, y);
                 return (
                   <div
                     key={`${x}-${y}`}
                     className={`
                       maze-cell absolute
+                      ${cell.walls.top ? "wall-top" : ""}
+                      ${cell.walls.right ? "wall-right" : ""}
+                      ${cell.walls.bottom ? "wall-bottom" : ""}
+                      ${cell.walls.left ? "wall-left" : ""}
                       ${x === playerPos.x && y === playerPos.y ? "bg-maze-player" : ""}
                       ${x === maze.startPosition.x && y === maze.startPosition.y ? "bg-maze-start" : ""}
                       ${x === maze.endPosition.x && y === maze.endPosition.y ? "bg-maze-end" : ""}
                       ${!isCellVisible(x, y) ? "opacity-0" : ""}
                       ${zoomedView && Math.abs(x - playerPos.x) <= 1 && Math.abs(y - playerPos.y) <= 1 ? "scale-[1.15]" : ""}
                       ${zoomedView ? "transition-all duration-300" : ""}
-                      ${is3D ? "maze-cell-3d" : ""}
                     `}
                     style={{
                       left: `${posX}%`,
                       top: `${posY}%`,
-                      width: `${cellSize}%`,
-                      height: `${cellSize}%`,
-                      transform: `translate(-50%, -50%) ${is3D ? `rotateX(${rotateX}deg) translateZ(${depth}px)` : ''}`,
                       transformOrigin: 'center',
-                      transition: 'all 0.5s ease-out',
-                      zIndex: is3D ? Math.floor(100 - ringIndex * 10) : 'auto',
+                      width: `${Math.max(2, 85 / MAZE_SIZE)}%`,
+                      height: `${Math.max(2, 85 / MAZE_SIZE)}%`,
+                      transform: `translate(-50%, -50%)`,
                     }}
                   >
                     {cell.walls.top && (
-                      <div 
-                        className="wall wall-top absolute top-0 left-0 right-0 h-0.5 bg-black" 
-                        style={{ 
-                          transform: is3D ? `translateZ(2px)` : 'none',
-                        }}
-                      />
+                      <div className="wall wall-top absolute top-0 left-0 right-0 h-0.5 bg-black" />
                     )}
                     {cell.walls.right && (
-                      <div 
-                        className="wall wall-right absolute top-0 bottom-0 right-0 w-0.5 bg-black" 
-                        style={{ 
-                          transform: is3D ? `translateZ(2px)` : 'none',
-                        }}
-                      />
+                      <div className="wall wall-right absolute top-0 bottom-0 right-0 w-0.5 bg-black" />
                     )}
                     {cell.walls.bottom && (
-                      <div 
-                        className="wall wall-bottom absolute bottom-0 left-0 right-0 h-0.5 bg-black" 
-                        style={{ 
-                          transform: is3D ? `translateZ(2px)` : 'none',
-                        }}
-                      />
+                      <div className="wall wall-bottom absolute bottom-0 left-0 right-0 h-0.5 bg-black" />
                     )}
                     {cell.walls.left && (
-                      <div 
-                        className="wall wall-left absolute top-0 bottom-0 left-0 w-0.5 bg-black" 
-                        style={{ 
-                          transform: is3D ? `translateZ(2px)` : 'none',
-                        }}
-                      />
+                      <div className="wall wall-left absolute top-0 bottom-0 left-0 w-0.5 bg-black" />
                     )}
                   </div>
                 );
@@ -311,7 +236,7 @@ const Maze: React.FC = () => {
         </div>
       </div>
 
-      {isMobile && !completed && <MobileControls onMove={handleMove} is3D={is3D} />}
+      {isMobile && !completed && <MobileControls onMove={handleMove} />}
 
       <Dialog open={showStats} onOpenChange={setShowStats}>
         <DialogContent className="sm:max-w-md">
@@ -341,15 +266,6 @@ const Maze: React.FC = () => {
       </Dialog>
     </div>
   );
-};
-
-// Helper function to calculate distance from center
-const distanceFromCenter = (x: number, y: number): number => {
-  const centerX = (MAZE_SIZE - 1) / 2;
-  const centerY = (MAZE_SIZE - 1) / 2;
-  const normalizedX = (x - centerX) / centerX;
-  const normalizedY = (y - centerY) / centerY;
-  return Math.sqrt(normalizedX * normalizedX + normalizedY * normalizedY);
 };
 
 export default Maze;
