@@ -14,10 +14,16 @@ export const generateShareText = (moves: number, time: number, mazeNumber: numbe
   const maxEmojis = 50;
   const totalEmojis = Math.min(totalScore, maxEmojis);
   
-  // Calculate proportions: if we have 10 penalties out of 100 total, we want 10% of our emojis to be red
-  const mineEmojiCount = Math.round((penalties / (moves + penalties)) * totalEmojis);
-  const powerupEmojiCount = Math.round((bonuses / (moves + penalties)) * totalEmojis);
-  const moveEmojiCount = totalEmojis - mineEmojiCount - powerupEmojiCount;
+  // Get the actual number of mines hit and powerups collected
+  // Each mine adds 5 to penalties, so divide by 5 to get count
+  const minesHit = penalties / 5;
+  // Each powerup subtracts 5 from the score, so divide by 5 to get count
+  const powerupsCollected = bonuses / 5;
+  
+  // Calculate how many emojis to show for each type
+  const mineEmojiCount = Math.min(minesHit, maxEmojis);
+  const powerupEmojiCount = Math.min(powerupsCollected, maxEmojis - mineEmojiCount);
+  const moveEmojiCount = Math.max(0, totalEmojis - mineEmojiCount - powerupEmojiCount);
   
   // Create the emoji string
   const mineEmojis = "🔴".repeat(mineEmojiCount);
