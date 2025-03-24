@@ -8,24 +8,24 @@ export const seedRandom = (seed: number) => {
   };
 };
 
-// Get today's seed
+// Get today's seed based on UTC time (reset at 12 AM UTC)
 export const getTodaySeed = () => {
   const now = new Date();
+  // Adjust date to UTC
+  const utcNow = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
   // Format: YYYYMMDD as number
   return parseInt(
-    `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(
-      now.getDate()
+    `${utcNow.getUTCFullYear()}${String(utcNow.getUTCMonth() + 1).padStart(2, "0")}${String(
+      utcNow.getUTCDate()
     ).padStart(2, "0")}`,
     10
   );
 };
 
-// Get maze number (days since start)
+// Get maze number (days since start, starting from 1)
 export const getMazeNumber = () => {
-  const startDate = new Date(2023, 0, 1); // January 1, 2023
-  const today = new Date();
-  const timeDiff = today.getTime() - startDate.getTime();
-  return Math.floor(timeDiff / (24 * 60 * 60 * 1000)) + 1;
+  // Start counting from 1 (day 1)
+  return 1;
 };
 
 export const formatTime = (timeInSeconds: number): string => {

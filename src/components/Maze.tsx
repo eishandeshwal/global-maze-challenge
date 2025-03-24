@@ -30,6 +30,7 @@ const Maze: React.FC = () => {
   const startTimeRef = useRef<number>();
   const gameStarted = useRef(false);
   const isMobile = useIsMobile();
+  const mazeNumber = getMazeNumber();
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -140,7 +141,7 @@ const Maze: React.FC = () => {
   }, []);
 
   const handleShare = async () => {
-    const shareText = generateShareText(moves, time, getMazeNumber(), penalties, bonuses);
+    const shareText = generateShareText(moves, time, mazeNumber, penalties, bonuses);
     
     try {
       await navigator.clipboard.writeText(shareText);
@@ -194,7 +195,7 @@ const Maze: React.FC = () => {
     <div className="min-h-screen flex flex-col items-center justify-center p-4 gap-6 animate-fade-in">
       <div className="text-center space-y-2">
         <h1 className="text-4xl font-bold tracking-tight">DailyMaze</h1>
-        <p className="text-muted-foreground">#{getMazeNumber()}</p>
+        <p className="text-muted-foreground">#{mazeNumber}</p>
       </div>
 
       <div className="glass-card p-6 space-y-6">
@@ -245,9 +246,9 @@ const Maze: React.FC = () => {
                       height: `${Math.max(2, 85 / MAZE_SIZE)}%`,
                       transform: `translate(-50%, -50%)`,
                       backgroundColor: cell.hasMine && (completed || triggeredEvents[`${x},${y}`]) 
-                        ? 'rgba(239, 68, 68, 0.5)' 
+                        ? 'rgba(234, 56, 76, 0.5)' // Red for mines
                         : cell.hasPowerup && (completed || triggeredEvents[`${x},${y}`])
-                        ? 'rgba(59, 130, 246, 0.5)'
+                        ? 'rgba(34, 197, 94, 0.5)' // Green for powerups
                         : '',
                     }}
                   >
@@ -267,7 +268,7 @@ const Maze: React.FC = () => {
                       <Bomb className="w-full h-full p-1 text-red-500" />
                     )}
                     {cell.hasPowerup && (completed || triggeredEvents[`${x},${y}`]) && (
-                      <Star className="w-full h-full p-1 text-blue-500" />
+                      <Star className="w-full h-full p-1 text-green-500" />
                     )}
                   </div>
                 );
@@ -286,7 +287,7 @@ const Maze: React.FC = () => {
       <Dialog open={showStats} onOpenChange={setShowStats}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>DailyMaze #{getMazeNumber()} Completed!</DialogTitle>
+            <DialogTitle>DailyMaze #{mazeNumber} Completed!</DialogTitle>
             <DialogDescription>
               You successfully navigated through the maze
             </DialogDescription>
