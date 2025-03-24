@@ -144,7 +144,7 @@
   grid-template-columns: repeat(var(--maze-size), 1fr);
   grid-template-rows: repeat(var(--maze-size), 1fr);
   aspect-ratio: 1 / 1;
-  max-width: min(100vw - 2rem, 600px);
+  max-width: min(100vw - 2rem, 780px); /* Increased by 30% from 600px */
   width: 100%;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
   overflow: hidden;
@@ -156,12 +156,12 @@
   position: relative;
   width: 100%;
   aspect-ratio: 1 / 1;
-  max-width: min(100vw - 2rem, 600px);
-  border: 2px solid black;
+  max-width: min(100vw - 2rem, 780px); /* Increased by 30% from 600px */
   border-radius: 50%;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
   background-color: white;
   overflow: hidden;
+  /* Removed border: 2px solid black; */
 }
 
 .wall {
